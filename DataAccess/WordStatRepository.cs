@@ -30,7 +30,7 @@ namespace DataAccess
                 var wordStat = collection.Find(x => x.Word == itemName).FirstOrDefault();
                 if (wordStat == null)
                 {
-                    collection.InsertOne(new WordStat { Word = itemName , Count = wordsStatDic[itemName]});
+                    collection.InsertOne(new WordStat { Word = itemName , Count = wordsStatDic[itemName]}); 
                 }
                 else
                 {
