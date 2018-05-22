@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Formatting;
 using System.Web.Http;
 using Services.Contracts;
 
@@ -19,10 +20,19 @@ namespace SmartWord.Controllers
 
         [HttpPost]
         [Route("~/api/words/counter")]
-        public string Counter([FromBody]string input)
+        public IHttpActionResult Counter([FromBody]FormDataCollection request)
         {
-            var res = _statService.CountingWords(input);
-            return res;
+            try
+            {
+                var dataCollection = request.ReadAsNameValueCollection();
+                var res = _statService.CountingWords(dataCollection["input"]);
+                return Ok(res);
+
+            }
+            catch (Exception)
+            {
+                return BadRequest("Error trying to analyze input for statistics");
+            }
         }
 
     }

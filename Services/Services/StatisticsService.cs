@@ -29,10 +29,10 @@ namespace Services.Services
 
         public string CountingWords(string input)
         {
-            var textToAnalyze = getTextToAnalyze(input);
+            var textToAnalyze = GetTextToAnalyze(input);
             IDictionary<string, int> wordsStatDic = new Dictionary<string, int>();
 
-            var words = Regex.Split(textToAnalyze, @"((\b[^\s]+\b)((?<=\.\w).)?)");
+            var words = Regex.Matches(textToAnalyze, @"\b\w+\b").OfType<Match>().Select(m => m.Value).ToList();
             foreach (var word in words)
             {
                 if (wordsStatDic.ContainsKey(word))
@@ -43,10 +43,9 @@ namespace Services.Services
                 else
                 {
                     wordsStatDic.Add(word, 1);
-                }
-                
-                _wordsStatRep.SetWordsNewStat(wordsStatDic);
+                }               
             }
+            _wordsStatRep.SetWordsNewStat(wordsStatDic);
 
             return JsonConvert.SerializeObject(wordsStatDic);
         }
@@ -57,25 +56,30 @@ namespace Services.Services
             return res;
         }
 
-        private string getTextToAnalyze(string input)
+        private string GetTextToAnalyze(string input)
         {
-            string textToAnalyze = input;
+            string textToAnalyze = string.Empty;
 
             //check if input is storage path / url / simple string input
             try
             {
-                var filePath = Path.GetFullPath(input);
-                textToAnalyze = _storageService.ReadTextFile(filePath);
+                if (File.Exists(input))
+                {
+                    textToAnalyze = _storageService.ReadTextFile(input);
+                }
+                else if (Uri.IsWellFormedUriString(input, UriKind.Absolute))
+                {
+                    textToAnalyze = _apiService.GetText(input);
+                }
+                else
+                {
+                    textToAnalyze = input;
+                }
             }
             //so it isn't a valid path
-            catch (Exception ex)
+            catch (Exception)
             {
-                //so it isn't a file path or not valid
-            }
-
-            if (Uri.IsWellFormedUriString(input, UriKind.Absolute))
-            {
-                textToAnalyze = _apiService.GetText(input);
+                // ignored
             }
 
             return textToAnalyze;

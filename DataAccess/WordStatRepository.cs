@@ -6,18 +6,20 @@ using System.Runtime.Remoting.Channels;
 using System.Text;
 using System.Threading.Tasks;
 using DataAccess.Contracts;
+using MongoDB.Bson;
 using MongoDB.Driver;
+using System.Configuration;
 
 namespace DataAccess
 {
     public class WordStatRepository: IWordsStatRepository
     {
         private MongoClient _dbContext;
-        const string connectionString = "localhost:27017"; //just for our exercise
+        private readonly string _connectionString = ConfigurationManager.ConnectionStrings["MongoDB"].ToString(); 
 
         public WordStatRepository()
         {
-            _dbContext = new MongoClient(connectionString);
+            _dbContext = new MongoClient(_connectionString);
         }
         public void SetWordsNewStat(IDictionary<string,int> wordsStatDic)
         {
@@ -32,7 +34,9 @@ namespace DataAccess
                 }
                 else
                 {
-                    wordStat.Count += wordsStatDic[itemName];
+                    var modificationUpdate = Builders<WordStat>.Update
+                        .Set(a => a.Count, wordStat.Count += wordsStatDic[itemName]);
+                    collection.UpdateOne(wordStatItem => wordStatItem.Word == itemName, modificationUpdate);
                 }
             }
             
@@ -41,11 +45,18 @@ namespace DataAccess
         public long GetWordStat(string wordInput)
         {
             var db = _dbContext.GetDatabase("statistics");
-            return db.GetCollection<WordStat>("WordsStat").Find(x => x.Word == wordInput).FirstOrDefault().Count;
+            var statObj = db.GetCollection<WordStat>("WordsStat").Find(x => x.Word == wordInput).FirstOrDefault();
+            if (statObj == null)
+            {
+                return 0;
+            }
+
+            return statObj.Count;
         }
 
         public class WordStat
         {
+            public ObjectId Id { get; set; }
             public string Word { get; set; }
             public long Count { get; set; }
         }

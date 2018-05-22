@@ -18,10 +18,17 @@ namespace SmartWord.Controllers
 
         [HttpGet]
         [Route("~/api/words/statistics/{word}")]
-        public long GetStatistics(string word)
+        public IHttpActionResult GetStatistics(string word)
         {
-            var res = _statService.GetWordStat(word);
-            return res;
+            try
+            {
+                var res = _statService.GetWordStat(word);
+                return Ok(res);
+            }
+            catch (Exception)
+            {               
+                return BadRequest("Error trying to get statistics for specific word input");
+            }
 
         }
     }
